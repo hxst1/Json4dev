@@ -24,8 +24,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "JSON4DEV - Format, Validate & Beautify JSON",
-    template: "%s | JSON4DEV",
+    default: "Json4dev - Format, Validate & Beautify JSON",
+    template: "%s | Json4dev",
   },
   description:
     "A modern, fast and beautiful JSON formatter, validator and minifier for developers. Format, validate, and beautify your JSON in seconds.",
