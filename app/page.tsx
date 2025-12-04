@@ -42,9 +42,11 @@ export default function Page() {
         </header>
 
         {/* Main grid */}
-        <main className="grid lg:grid-cols-2 gap-6 md:gap-8 items-start">
-          <Editor onChange={setResult} />
-          <Output result={result} />
+        <main className="max-w-7xl mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Editor onChange={setResult} />
+            <Output result={result} />
+          </div>
         </main>
 
         {/* Footer con más separación */}

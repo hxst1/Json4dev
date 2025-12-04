@@ -1,24 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --border-default: #334155;
-  --border-strong: #475569;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
+  --bg-primary: #0a1120;      /* Azul muy oscuro */
+  --bg-secondary: #0f1b33;    /* Azul profundo */
+  --bg-tertiary: #152544;     /* Azul medio oscuro */
+  
+  --border-default: #1e3a8a;  /* Azul medio */
+  --border-strong: #3b82f6;   /* Azul vibrante */
+
+  --text-primary: #e2e8f0;    /* Gris azulado claro */
+  --text-secondary: #94a3b8;  /* Gris azulado suave */
+
+  /* Opcional pero recomendado */
+  --accent: #60a5fa;          /* Azul acento */
+  --accent-hover: #3b82f6;
 }
 
+
 .light {
-  --bg-primary: #f8fafc;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
-  --border-default: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
+  --bg-primary: #f0f6ff;      /* Azul muy muy claro */
+  --bg-secondary: #ffffff;    /* Blanco puro */
+  --bg-tertiary: #dbeafe;     /* Azul pastel */
+
+  --border-default: #bfdcff;  /* Azul claro */
+  --border-strong: #60a5fa;   /* Azul vibrante */
+
+  --text-primary: #0a1120;    /* Azul profundo para buen contraste */
+  --text-secondary: #475569;  /* Gris azulado */
+
+  --accent: #2563eb;          /* Azul fuerte */
+  --accent-hover: #1d4ed8;
 }
+
+
 
 html {
   scroll-behavior: smooth;
@@ -78,14 +92,6 @@ body {
 
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
-}
-
-/* Focus styles */
-button:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 0px;
-  transition: outline-offset 0.2s ease;
 }
 
 /* Smooth transitions for interactive elements */

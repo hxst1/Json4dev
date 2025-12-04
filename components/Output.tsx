@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 export default function Output({ result }: { result: string }) {
     const [copied, setCopied] = useState(false);
+    const [isDark, setIsDark] = useState(true);
     const contentRef = useRef<HTMLPreElement>(null);
     const lineNumbersRef = useRef<HTMLDivElement>(null);
 
@@ -12,6 +13,25 @@ export default function Output({ result }: { result: string }) {
 
     const lines = result.split("\n");
     const lineCount = lines.length;
+    const charCount = result.length;
+
+    // Detect theme changes
+    useEffect(() => {
+        const checkTheme = () => {
+            const isDarkMode = document.documentElement.classList.contains("dark");
+            setIsDark(isDarkMode);
+        };
+
+        checkTheme();
+
+        const observer = new MutationObserver(checkTheme);
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["class"]
+        });
+
+        return () => observer.disconnect();
+    }, []);
 
     const handleScroll = useCallback(() => {
         if (contentRef.current && lineNumbersRef.current) {
@@ -27,159 +47,137 @@ export default function Output({ result }: { result: string }) {
         }
     };
 
-    // Enhanced syntax highlighting for JSON
+    const handleDownload = () => {
+        if (isEmpty || isError) return;
+        const blob = new Blob([result], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "output.json";
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    // Syntax highlighting
     const highlightJSON = (json: string): string => {
         if (isError || isEmpty) return json;
 
         try {
-            // Escape HTML first
             const escaped = json
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;");
 
-            // Apply syntax highlighting
-            return escaped
-                // Keys (property names)
-                .replace(
-                    /(&quot;|")([^"\\]*(?:\\.[^"\\]*)*)(&quot;|")\s*:/g,
-                    '<span class="text-cyan-400">"$2"</span>:'
-                )
-                // String values
-                .replace(
-                    /:\s*(&quot;|")([^"\\]*(?:\\.[^"\\]*)*)(&quot;|")/g,
-                    ': <span class="text-amber-300">"$2"</span>'
-                )
-                // Numbers
-                .replace(
-                    /:\s*(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g,
-                    ': <span class="text-violet-400">$1</span>'
-                )
-                // Booleans
-                .replace(
-                    /:\s*(true|false)/g,
-                    ': <span class="text-rose-400">$1</span>'
-                )
-                // Null
-                .replace(
-                    /:\s*(null)/g,
-                    ': <span class="text-slate-500 italic">$1</span>'
-                )
-                // Brackets
-                .replace(
-                    /(\{|\})/g,
-                    '<span class="text-slate-400">$1</span>'
-                )
-                .replace(
-                    /(\[|\])/g,
-                    '<span class="text-slate-400">$1</span>'
-                );
+            if (isDark) {
+                return escaped
+                    .replace(/("(?:\\.|[^"\\])*")(\s*:)/g, '<span style="color:#7dd3fc">$1</span>$2')
+                    .replace(/:(\s*)("(?:\\.|[^"\\])*")/g, ':$1<span style="color:#fcd34d">$2</span>')
+                    .replace(/:(\s*)(-?\d+\.?\d*(?:[eE][+-]?\d+)?)([\s,\n\]}])/g, ':$1<span style="color:#c4b5fd">$2</span>$3')
+                    .replace(/:(\s*)(true|false)([\s,\n\]}])/g, ':$1<span style="color:#fb7185">$2</span>$3')
+                    .replace(/:(\s*)(null)([\s,\n\]}])/g, ':$1<span style="color:#64748b">$2</span>$3')
+                    .replace(/([{}\[\]])/g, '<span style="color:#64748b">$1</span>');
+            } else {
+                return escaped
+                    .replace(/("(?:\\.|[^"\\])*")(\s*:)/g, '<span style="color:#2563eb">$1</span>$2')
+                    .replace(/:(\s*)("(?:\\.|[^"\\])*")/g, ':$1<span style="color:#059669">$2</span>')
+                    .replace(/:(\s*)(-?\d+\.?\d*(?:[eE][+-]?\d+)?)([\s,\n\]}])/g, ':$1<span style="color:#7c3aed">$2</span>$3')
+                    .replace(/:(\s*)(true|false)([\s,\n\]}])/g, ':$1<span style="color:#ea580c">$2</span>$3')
+                    .replace(/:(\s*)(null)([\s,\n\]}])/g, ':$1<span style="color:#9ca3af">$2</span>$3')
+                    .replace(/([{}\[\]])/g, '<span style="color:#6b7280">$1</span>');
+            }
         } catch {
             return json;
         }
     };
 
     return (
-        <div className="flex flex-col gap-4 w-full">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+        <div className="flex flex-col gap-3 w-full">
+            {/* Header - Same height as Editor */}
+            <div className="flex items-center justify-between h-8">
+                <h2 className="text-sm font-semibold flex items-center gap-2 text-color:var(--text-primary)">
                     <span className="relative flex h-2 w-2">
-                        <span
-                            className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75
-                            ${isError ? "bg-rose-400" : isEmpty ? "bg-slate-500" : "bg-emerald-400"}`}
-                        ></span>
-                        <span
-                            className={`relative inline-flex rounded-full h-2 w-2
-                            ${isError ? "bg-rose-500" : isEmpty ? "bg-slate-600" : "bg-emerald-500"}`}
-                        ></span>
+                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75
+                            ${isError ? "bg-rose-500" : isEmpty ? "bg-slate-500" : "bg-emerald-500"}`}></span>
+                        <span className={`relative inline-flex rounded-full h-2 w-2
+                            ${isError ? "bg-rose-500" : isEmpty ? "bg-slate-500" : "bg-emerald-500"}`}></span>
                     </span>
                     Output
                 </h2>
 
-                {!isEmpty && (
-                    <div className="flex items-center gap-3">
-                        <div className="flex gap-3 text-xs text-slate-500 font-mono">
-                            <span className="px-2 py-1 rounded bg-slate-800/50">{lineCount} lines</span>
+                <div className="flex items-center gap-2">
+                    {!isEmpty && (
+                        <div className="flex gap-2 text-xs font-mono text-color:var(--text-secondary)">
+                            <span className="px-2 py-1 rounded bg-color:var(--bg-tertiary)">{lineCount} lines</span>
+                            <span className="px-2 py-1 rounded bg-color:var(--bg-tertiary)">{charCount} chars</span>
                         </div>
-                        {!isError && (
+                    )}
+                    {!isEmpty && !isError && (
+                        <div className="flex gap-1.5">
+                            <button
+                                onClick={handleDownload}
+                                className="p-1.5 rounded-lg text-xs font-medium transition-all duration-200 border
+                                bg-color:var(--bg-tertiary) text-color:var(--text-secondary) hover:text-color:var(--text-primary)
+                                border-color:var(--border-default) hover:bg-color:var(--bg-hover)"
+                                title="Download JSON"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            </button>
                             <button
                                 onClick={handleCopy}
-                                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium
-                                bg-slate-800/80 backdrop-blur-sm
-                                hover:bg-slate-700
-                                transition-all duration-200
-                                text-slate-400 hover:text-white
-                                border border-slate-700/50"
+                                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border
+                                bg-color:var(--bg-tertiary) text-color:var(--text-secondary) hover:text-color:var(--text-primary)
+                                border-color:var(--border-default) hover:bg-color:var(--bg-hover)"
                             >
                                 {copied ? (
                                     <>
-                                        <svg
-                                            className="w-3.5 h-3.5 text-emerald-400"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M5 13l4 4L19 7"
-                                            />
+                                        <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                         </svg>
                                         <span className="text-emerald-400">Copied!</span>
                                     </>
                                 ) : (
                                     <>
-                                        <svg
-                                            className="w-3.5 h-3.5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                            />
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                         </svg>
                                         Copy
                                     </>
                                 )}
                             </button>
-                        )}
-                    </div>
-                )}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Output Container */}
             <div className="relative group">
-                <div
-                    className={`flex rounded-xl overflow-hidden
-                    shadow-2xl shadow-black/40
-                    transition-all duration-300
+                <div className={`flex rounded-xl overflow-hidden border transition-all duration-300
+                    bg-color:var(--bg-secondary)
                     ${isError
-                            ? "bg-linear-to-br from-rose-950/50 via-slate-900 to-slate-900 border border-rose-500/30"
-                            : isEmpty
-                                ? "bg-linear-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-700/50"
-                                : "bg-linear-to-br from-slate-900 via-slate-900 to-slate-800 border border-emerald-500/20"
-                        }`}
+                        ? "border-rose-500/30"
+                        : isEmpty
+                            ? "border-color:var(--border-default)"
+                            : "border-emerald-500/20"
+                    }`}
                 >
-                    {/* Line Numbers (only show when there's content) */}
+                    {/* Line Numbers */}
                     {!isEmpty && (
                         <div
                             ref={lineNumbersRef}
-                            className="shrink-0 overflow-hidden select-none
-                            bg-slate-900/80 border-r border-slate-700/50"
+                            className="shrink-0 overflow-hidden select-none border-r border-color:var(--border-default) bg-color:var(--bg-tertiary)"
                             style={{ width: `${Math.max(3, String(lineCount).length + 1)}rem` }}
                         >
-                            <div className="py-4 px-2 font-mono text-sm md:text-base leading-6">
+                            <div className="py-4 px-2 font-mono text-sm leading-6">
                                 {lines.map((_, i) => (
                                     <div
                                         key={i}
                                         className={`text-right transition-colors
-                                        ${isError ? "text-rose-800 hover:text-rose-600" : "text-slate-600 hover:text-slate-400"}`}
+                                        ${isError
+                                                ? "text-rose-700 hover:text-rose-500"
+                                                : "text-color:var(--text-secondary) hover:text-color:var(--text-primary)"
+                                            }`}
                                     >
                                         {i + 1}
                                     </div>
@@ -192,32 +190,29 @@ export default function Output({ result }: { result: string }) {
                     <pre
                         ref={contentRef}
                         onScroll={handleScroll}
-                        className={`flex-1 w-full h-[260px] sm:h-80 md:h-[380px] lg:h-[440px] xl:h-[500px]
-                        overflow-auto font-mono text-sm md:text-base leading-6
+                        className={`flex-1 w-full h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px]
+                        overflow-auto font-mono text-sm leading-6
                         ${isEmpty ? "" : "py-4 px-4"}
-                        ${isError ? "text-rose-400" : "text-slate-200"}`}
+                        ${isError ? "text-rose-400" : "text-color:var(--text-primary)"}`}
                     >
                         {isEmpty ? (
                             <span className="flex flex-col items-center justify-center h-full text-center gap-4">
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-cyan-500/10 blur-2xl rounded-full"></div>
-                                    <svg
-                                        className="relative w-20 h-20 text-slate-700"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={1}
-                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                        />
-                                    </svg>
-                                </div>
+                                <svg
+                                    className="w-16 h-16 text-color:var(--text-secondary) opacity-30"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={1}
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                </svg>
                                 <div className="space-y-1">
-                                    <p className="text-slate-500 font-medium">No output yet</p>
-                                    <p className="text-slate-600 text-sm">Your formatted JSON will appear here</p>
+                                    <p className="font-medium text-color:var(--text-secondary)">No output yet</p>
+                                    <p className="text-sm text-color:var(--text-secondary) opacity-60">Your formatted JSON will appear here</p>
                                 </div>
                             </span>
                         ) : isError ? (
@@ -235,22 +230,16 @@ export default function Output({ result }: { result: string }) {
                 {!isEmpty && (
                     <div className="absolute bottom-3 right-3">
                         {isError ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg 
-                            bg-rose-500/10 backdrop-blur-sm
-                            border border-rose-500/30 
-                            text-rose-400 text-xs font-semibold
-                            shadow-lg shadow-rose-500/10">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                            bg-rose-500/10 border border-rose-500/30 text-rose-400">
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                                 Invalid JSON
                             </span>
                         ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg 
-                            bg-emerald-500/10 backdrop-blur-sm
-                            border border-emerald-500/30 
-                            text-emerald-400 text-xs font-semibold
-                            shadow-lg shadow-emerald-500/10">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                            bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
