@@ -352,7 +352,7 @@ export default function Editor({ onChange }: { onChange: (v: string) => void }) 
                 </div>
 
                 {/* Shortcuts hint */}
-                <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
+                <div className="absolute bottom-3 left-15 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
                     <div className="flex gap-2 text-[10px] text-color:var(--text-secondary)">
                         <span className="px-1.5 py-0.5 rounded bg-color:var(--bg-tertiary) border border-color:var(--border-default)">Tab</span>
                         <span>indent</span>
