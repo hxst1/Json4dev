@@ -20,12 +20,6 @@
   --text-secondary: #64748b;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 html {
   scroll-behavior: smooth;
 }
@@ -90,7 +84,8 @@ body {
 button:focus-visible,
 textarea:focus-visible {
   outline: 2px solid #3b82f6;
-  outline-offset: 2px;
+  outline-offset: 0px;
+  transition: outline-offset 0.2s ease;
 }
 
 /* Smooth transitions for interactive elements */
